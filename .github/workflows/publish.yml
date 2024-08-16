@@ -1,0 +1,30 @@
+name: Publish
+on:
+  release:
+    types: [published]
+jobs:
+  publish:
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.11'
+        architecture: x64
+    - run: pip install pip==22.1.2 wheel==0.37.1 build==0.8.0
+    - run: python -m build --wheel
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ secrets.AWS_GITHUB_WORKFLOWS_ROLE_ARN }}
+        aws-region: us-east-1
+    - uses: Flared/python-publish-action@v0.3.2
+      with:
+        AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        AWS_SESSION_TOKEN: ${{ env.AWS_SESSION_TOKEN }}
+        FILES: dist/*
+
